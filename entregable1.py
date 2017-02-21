@@ -65,8 +65,8 @@
 # Como primer paso debes cargar los módulos busqueda.py y problema.py
 # desarrollados en las prácticas 3 y 4.
 
-
-
+import busqueda.py
+import problema.py
 
 # -------------------------------------------------------------------------
 # LECTURA DE ESPACIOS EN FICHEROS
