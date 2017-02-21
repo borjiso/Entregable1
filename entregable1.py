@@ -5,9 +5,9 @@
 # Nombre y apellidos: Borja Jimeno Soto
 # =============================================================================
 
-#==============================================================================
+# ==============================================================================
 # Entregable 1. Búsqueda en espacios de estados
-#==============================================================================
+# ==============================================================================
 
 # Escribir el código Python de las funciones que se piden en el
 # espacio que se indica en cada ejercicio.
@@ -17,9 +17,9 @@
 # ejercicio NO se corregirán).
 
 
-#==============================================================================
+# ==============================================================================
 # DESCRIPCIÓN DEL PROBLEMA
-#==============================================================================
+# ==============================================================================
 
 # La tripulación de la nave Planet Express ha realizado con exito la entrega
 # en el planeta Omicron Persei 8, y ahora debes ayudar a Leela, Fry y Bender
@@ -28,7 +28,7 @@
 # En este problema, Leela introduce en el ordenador de la nave una configuración
 # del espacio, formado por una rejilla de casillas, algunas de ellas ocupadas
 # por un asteroide. Inicialmente, en una de las casillas libres está situada
-# la nave de Planet Express que tiene tres posibles movimientos: avanzar, girar
+# la nave de Planet Expre99ss que tiene tres posibles movimientos: avanzar, girar
 # a la derecha, y girar a la izquierda (aunque al movernos por el espacio podríamos
 # avanzar en tres dimensiones, aquí simplificamos el viaje a dos). Por supuesto
 # la nave sólo puede moverse a casillas que no tengan asteroides y al girar se
@@ -65,8 +65,9 @@
 # Como primer paso debes cargar los módulos busqueda.py y problema.py
 # desarrollados en las prácticas 3 y 4.
 
-import busqueda.py
-import problema.py
+import busqueda
+import problema as p
+
 
 # -------------------------------------------------------------------------
 # LECTURA DE ESPACIOS EN FICHEROS
@@ -83,34 +84,38 @@ import problema.py
 
 
 def lee_espacio(fichero):
+    """
+    Lee de un fichero de texto en el que está representado
+           el espacio y devuelve una tupla (dim,mat,posI,posF) donde:
+           - dim es una tupla (n,m) donde n es el número de filas del espacio
+             y m el número de columnas (sin contar los bordes).
+           - mat es una matriz nxm (en forma de lista de listas) en la que su
+             componente mat[i][j] es 0 si en la casilla (i,j) no hay obstáculo
+             y 1 si hay obstáculo.
+           - posI es una tupla ((x,y),O), donde (x,y) son las coordenadas de la posición
+             inicial de la nave (las coordenadas empiezan a contar en el 0) y O es
+             la orientación de la nave.
+            - posF es una tupla (x,y) con las coordenadas de la posición de casa
+    """
     with open(fichero) as ficheroAbierto:
         componentes = ficheroAbierto.readline().split()
         dim = (componentes[0], componentes[1])
         mat = []
-        i=0
+        i = -1
         encontrado = False
         for line in ficheroAbierto:
-            mat.append([1 if x == '*' else 0 for x in line])
+            print line
+            l = [1 if x == '*' else 0 for x in line]
+            mat.append(l[1:-2])
             if not encontrado:
                 if line.find("H") > -1:
-                    posF = (line.find("H"), i)
+                    posF = (line.find("H")-1, i)
                 for x in ["U", "D", "L", "R"]:
                     if line.find(x) > -1:
-                        posI = ((line.find(x), i), x)
-                i += 1
-    return (dim, mat, posI, posF)
+                        posI = ((line.find(x)-1, i), x)
+            i += 1
+    return tuple(dim, mat[1:-1], posI, posF)
 
-    """Lee de un fichero de texto en el que está representado
-       el espacio y devuelve una tupla (dim,mat,posI,posF) donde:
-       - dim es una tupla (n,m) donde n es el número de filas del espacio
-         y m el número de columnas (sin contar los bordes).
-       - mat es una matriz nxm (en forma de lista de listas) en la que su
-         componente mat[i][j] es 0 si en la casilla (i,j) no hay obstáculo
-         y 1 si hay obstáculo.
-       - posI es una tupla ((x,y),O), donde (x,y) son las coordenadas de la posición
-         inicial de la nave (las coordenadas empiezan a contar en el 0) y O es
-         la orientación de la nave.
-        - posF es una tupla (x,y) con las coordenadas de la posición de casa"""
 
 # Ejemplo de uso (en espacio1.txt está el laberinto del ejemplo anterior):
 # >>> esp1=lee_espacio("espacio1.txt")
@@ -136,8 +141,68 @@ def lee_espacio(fichero):
 # como argumento una estructura de las que se obtienen al leer el espacio de
 # un fichero (por ejemplo, como la variable esp1 del ejemplo anterior).
 
-class Viaje_Espacial(Problema):
-    pass
+class Viaje_Espacial(p.Problema):
+    def __init__(self, espacio):
+        super(Viaje_Espacial, self).__init__(estado_inicial=espacio.index(2), estado_final=espacio[3])
+        self.mapa = espacio.index(1)
+
+
+    def acciones(self, estado):
+        x = estado.index(2).index(0).index(0)
+        y = estado.index(2).index(0).index(1)
+        o = estado.index(2).index(1)
+        xmax = estado.index(0).index(0)
+        ymax = estado.index(0).index(1)
+        accs = list()
+        accs.add("GirarDerecha")
+        accs.add("GirarIzquierda")
+        if o == "U":
+            if y < ymax and self.mapa[x][y+1] == 0:
+                accs.add("Avanzar")
+        elif o == "D":
+            if y > 0 and self.mapa[x][y-1] == 0:
+                accs.add("Avanzar")
+        elif o == "R":
+            if x < xmax and self.mapa[x+1][y] == 0:
+                accs.add("Avanzar")
+        else:  # o == "L"
+            if x > 0 and self.mapa[x-1][y] == 0:
+                accs.add("Avanzar")
+        return accs
+
+    def aplica(self, estado, accion):
+        pos = [x for x in estado.index(0)]
+        o = estado.index(1)
+        if accion == "GirarDerecha":
+            if o == "U":
+                o = "R"
+            elif o == "R":
+                o = "D"
+            elif o == "D":
+                o = "L"
+            else:  # o == "L"
+                o = "U"
+        elif accion == "GirarIzquierda":
+            if o == "U":
+                o = "L"
+            elif o == "L":
+                o = "D"
+            elif o == "D":
+                o = "R"
+            else:  # o == "R"
+                o = "U"
+        elif accion == "Avanzar":
+            if o == "U":
+                pos[1] += 1
+            elif o == "R":
+                pos[0] += 1
+            elif o == "D":
+                pos[1] -= 1
+            else:  # o == "L"
+                pos[0] -= 1
+
+    def es_estado_final(self, estado):
+        return estado.index(0) == self.estado_final.index(0)
 
 
 # -------------------------------------------------------------------------
@@ -155,6 +220,7 @@ def h1_viaje_espacial(problema):
 def h2_viaje_espacial(problema):
     pass
 
+
 # -------------------------------------------------------------------------
 # Experimentando
 # -------------------------------------------------------------------------
@@ -166,9 +232,8 @@ def h2_viaje_espacial(problema):
 # ejercicio puede ser útil que recuperes la clase Problema_con_Analizados
 # vista en las prácticas 3 y 4.
 
-def recorridoYcoste(espacio,algoritmo,h=None):
+def recorridoYcoste(espacio, algoritmo, h=None):
     pass
-
 
 # Utilizando la función anterior busca soluciones a los distintos laberintos
 # de los ejemplos, usando para ello las implementaciones de los distintos
@@ -242,10 +307,10 @@ def recorridoYcoste(espacio,algoritmo,h=None):
 
 
 
- 
-#==========================================================================
+
+# ==========================================================================
 # Entregable
-#==========================================================================
+# ==========================================================================
 
 # Guarda este fichero con tus soluciones a los distintos apartados,
 # introduciendo tu nombre al principio del mismo. Deberás entregar en un zip
@@ -255,4 +320,4 @@ def recorridoYcoste(espacio,algoritmo,h=None):
 # incluidos en el fichero zip. 
 
 
-#==========================================================================
+# ==========================================================================
