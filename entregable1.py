@@ -112,9 +112,9 @@ def lee_espacio(fichero):
                     posF = (line.find("H")-1, i)
                 for x in ["U", "D", "L", "R"]:
                     if line.find(x) > -1:
-                        posI = ((line.find(x)-1, i), x)
+                        posI = ((i, line.find(x)-1), x)
             i += 1
-    return tuple(dim, mat[1:-1], posI, posF)
+    return tuple([dim, mat[1:-1], posI, posF])
 
 
 # Ejemplo de uso (en espacio1.txt está el laberinto del ejemplo anterior):
@@ -145,7 +145,6 @@ class Viaje_Espacial(p.Problema):
     def __init__(self, espacio):
         super(Viaje_Espacial, self).__init__(estado_inicial=espacio.index(2), estado_final=espacio[3])
         self.mapa = espacio.index(1)
-
 
     def acciones(self, estado):
         x = estado.index(2).index(0).index(0)
@@ -200,6 +199,8 @@ class Viaje_Espacial(p.Problema):
                 pos[1] -= 1
             else:  # o == "L"
                 pos[0] -= 1
+        nuevoEstado = (pos, o)
+        return nuevoEstado
 
     def es_estado_final(self, estado):
         return estado.index(0) == self.estado_final.index(0)
