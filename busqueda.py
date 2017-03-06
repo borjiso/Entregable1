@@ -11,6 +11,8 @@
 # Auxiliar: colas y pilas
 # -------------------------------------------------------------------------------------
 
+import bisect  # Necesario para las listas con prioridad
+
 class Cola:
     """Clase abstracta/interfaz para colas de dos tipos:
         PilaLIFO(): Pilas
@@ -76,6 +78,53 @@ class ColaFIFO(Cola):
     def __str__(self):
         return str(self.A[self.comienzo:])
 
+class ColaPrioridad(Cola):
+    """Cola ordenada respecto a un valor dado por una función f, que la clase
+    tiene como atributo de dato. Admite orden creciente (min) y orden
+    decreciente (max). Si el orden es min, el método pop devuelve y elimina el
+    elemento de la cola con menor f(x). Si el orden es max, devuelve y elimina
+    el de mayor f(x). En realidad, los elementos quie se guardan en la cola
+    son tuplas (f(x),x). En Python, las tuplas se comparan lexicográficamente,
+    así que se mantendrán ordenadas por su valor f(x). La pertenencia a la
+    cola (x in C) se comprueba con x e ignorando f(x). Soporta además acceso
+    como en diccionarios, ignorando igualmente el valor de f(x)"""
+
+    def __init__(self, orden=min, f=lambda x: x):
+        self.A = []
+        self.orden = orden
+        self.f = f
+
+    def append(self, item):
+        bisect.insort(self.A, (self.f(item), item))
+
+    def __len__(self):
+        return len(self.A)
+
+    def pop(self):
+        if self.orden == min:
+            return self.A.pop(0)[1]
+        else:
+            return self.A.pop()[1]
+
+    def __contains__(self, item):
+        for (_, x) in self.A:
+            if x == item: return True
+        return False
+
+    def __getitem__(self, clave):
+        for _, item in self.A:
+            if item == clave:
+                return item
+
+    def __delitem__(self, clave):
+        for i, (valor, item) in enumerate(self.A):
+            if item == clave:
+                self.A.pop(i)
+                return
+
+    def __str__(self):
+        return str(self.A)
+
 
 # -------------------------------------------------------------------------------------
 # Nodos de búsqueda
@@ -104,10 +153,11 @@ class Nodo:
        - Solución (secuencia de acciones que llevan al estado) de un nodo.
        """
 
-    def __init__(self, estado, padre=None, accion=None):
+    def __init__(self, estado, padre=None, accion=None, coste_camino=0):
         self.estado = estado
         self.padre = padre
         self.accion = accion
+        self.coste_camino = coste_camino
         self.profundidad = 0
         if padre:
             self.profundidad = padre.profundidad + 1
@@ -118,7 +168,7 @@ class Nodo:
     def sucesor(self, problema, accion):
         """Sucesor de un nodo por una acción aplicable"""
         estado_suc = problema.aplica(self.estado, accion)
-        return Nodo(estado_suc, self, accion)
+        return Nodo(estado_suc, self, accion, problema.coste_de_aplicar_accion(self.estado, accion) + self.coste_camino)
 
     def sucesores(self, problema):
         """Lista de los nodos sucesores por todas las acciones que le sean
@@ -259,3 +309,87 @@ def busqueda_en_profundidad_iterativa(problema,cota_inicial):
         if resultado is not None:
             return resultado
         n+=1
+
+
+#---------------------------------------------------------------------------------
+# Búsqueda genérica con prioridad
+#---------------------------------------------------------------------------------
+
+# La siguiente función búsqueda_con_prioridad(problema,f), define una búsqueda
+# genérica en la que la cola de abiertos se gestiona como una cola con
+# prioridad, ordenándo los nodos de menor a mayor valoración según una función
+# dada f. Nótese que la búsqueda por primero el mejor, la búsqueda con coste
+# uniforme y la búsqueda A* pueden verse como casos particulares de esta búsqueda,
+# usando distintas funciones "f".
+
+# Esta búsqueda con prioridad varía respecto a la búsqueda genérica anterior,
+# en un detalle. Si se genera un nodo cuyo estado ya está en un nodo de
+# abiertos pero con mayor coste, ha de ser incluidos en abiertos.
+
+def busqueda_con_prioridad(problema, f):
+    """Búsqueda que gestiona la cola de abiertos ordenando los nodos de menor
+    a mayor valor de f. Tanto la búsqueda por primero el mejor, como la
+    búsqueda óptima y la búsqueda A* son casos particulares de esta búsqueda,
+    usando distintas f's (heurística, coste y coste más heurística,
+    respectivamente)."""
+
+    actual = Nodo(problema.estado_inicial)
+    if problema.es_estado_final(actual.estado):
+        return actual
+    abiertos = ColaPrioridad(min, f)
+    abiertos.append(actual)
+    cerrados = set()
+    while abiertos:
+        actual = abiertos.pop()
+        if problema.es_estado_final(actual.estado):
+            return actual
+        cerrados.add(actual.estado)
+        for sucesor in actual.sucesores(problema):
+            if sucesor.estado not in cerrados and sucesor not in abiertos:
+                abiertos.append(sucesor)
+            elif sucesor in abiertos:
+                nodo_con_mismo_estado = abiertos[sucesor]
+                if f(sucesor) < f(nodo_con_mismo_estado):
+                    del abiertos[nodo_con_mismo_estado]
+                    abiertos.append(sucesor)
+    return None
+
+#---------------------------------------------------------------------------------
+# Ejercicio 1.2.
+#---------------------------------------------------------------------------------
+
+# Usando la búsqueda con prioridad definida anteriormente, implementamos los
+# algoritmos busqueda_coste_uniforme, búsqueda_primero_el_mejor y
+# búsqueda_a_estrella. Nótese que los dos últimos algoritmos, además del
+# problema, reciben como entrada la función heurística que han de utilizar.
+
+# En las siguientes funciones para indicar la función f que se le pasa a
+# la función busqueda_con_prioridad puedes o bien utilizar funciones lambda (ver
+# Ejercicio 7 práctica 2, https://docs.python.org/3/tutorial/controlflow.html#lambda-expressions,
+# http://www.secnetix.de/olli/Python/lambda_functions.hawk).
+
+
+def busqueda_coste_uniforme(problema):
+    """Búsqueda coste uniforme: gestiona la cola en orden creciente de coste del camino"""
+    return busqueda_con_prioridad(problema, lambda x: x.coste_camino)
+
+
+def busqueda_primero_el_mejor(problema, h=None):
+    """Búsqueda por primero el mejor: gestionar la cola de menor a mayor
+    heurística.
+    NOTA: en realidad, al hacer que primero_el_mejor sea un caso
+    particular de búsqueda_con_prioridad, estamos poniendo en este algoritmo
+    un test innecesario. Cuando el estado de un nodo generado es el mismo que
+    el del un nodo que está en abiertos o en cerrados, su valoración (su
+    heurística en este caso) es la misma que el nodo que ya está en la lista,
+    ya que la heurística sólo depende del estado, y se aplica sobre el estado del nodo.
+    Sin embargo, búsqueda_con_prioridad comprueba si su valoración es menor o no (en este
+    caso inútilmente). Hemos preferido dejarlo así para enfatizar la
+    estructura común de estos algoritmos"""
+    return busqueda_con_prioridad(problema,lambda x: h(x.estado))
+
+
+
+def busqueda_a_estrella(problema, h=None):
+    """A*: la cola se ordena por f(n) = g(n)+h(n) (coste más heurística)."""
+    return busqueda_con_prioridad(problema, lambda x: x.coste_camino+h(x.estado))

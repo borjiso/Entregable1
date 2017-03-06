@@ -63,3 +63,6 @@ class Problema(object):
         estado final, o se definiera mediante otro tipo de comprobación,
         habría que redefinir este método en la subclase."""
         return estado == self.estado_final
+
+    def coste_de_aplicar_accion(self, estado, accion):
+        return 1

@@ -64,6 +64,7 @@
 
 # Como primer paso debes cargar los módulos busqueda.py y problema.py
 # desarrollados en las prácticas 3 y 4.
+import math
 
 import busqueda
 import problema as p
@@ -99,18 +100,17 @@ def lee_espacio(fichero):
     """
     with open(fichero) as ficheroAbierto:
         componentes = ficheroAbierto.readline().split()
-        dim = (componentes[0], componentes[1])
+        dim = (int(componentes[0]), int(componentes[1]))
         mat = []
         i = -1
         encontrado = False
         for line in ficheroAbierto:
-            print line
             l = [1 if x == '*' else 0 for x in line]
             mat.append(l[1:-2])
             if not encontrado:
                 if line.find("H") > -1:
-                    posF = (line.find("H")-1, i)
-                for x in ["U", "D", "L", "R"]:
+                    posF = (i,line.find("H")-1)
+                for x in ["U", "D", "L", "R"]:#Hacer más eficicente
                     if line.find(x) > -1:
                         posI = ((i, line.find(x)-1), x)
             i += 1
@@ -143,36 +143,37 @@ def lee_espacio(fichero):
 
 class Viaje_Espacial(p.Problema):
     def __init__(self, espacio):
-        super(Viaje_Espacial, self).__init__(estado_inicial=espacio.index(2), estado_final=espacio[3])
-        self.mapa = espacio.index(1)
+        super(Viaje_Espacial, self).__init__(estado_inicial=espacio[2], estado_final=espacio[3])
+        self.mapa = espacio[1]
+        self.dimension = espacio[0]
 
     def acciones(self, estado):
-        x = estado.index(2).index(0).index(0)
-        y = estado.index(2).index(0).index(1)
-        o = estado.index(2).index(1)
-        xmax = estado.index(0).index(0)
-        ymax = estado.index(0).index(1)
+        x = estado[0][0]
+        y = estado[0][1]
+        o = estado[1]
+        xmax = self.dimension[0]-1
+        ymax = self.dimension[1]-1
         accs = list()
-        accs.add("GirarDerecha")
-        accs.add("GirarIzquierda")
-        if o == "U":
+        accs.append("Girar a la derecha")
+        accs.append("Girar a la izquierda")
+        if o == "R":
             if y < ymax and self.mapa[x][y+1] == 0:
-                accs.add("Avanzar")
-        elif o == "D":
+                accs.append("Avanzar")
+        elif o == "L":
             if y > 0 and self.mapa[x][y-1] == 0:
-                accs.add("Avanzar")
-        elif o == "R":
+                accs.append("Avanzar")
+        elif o == "D":
             if x < xmax and self.mapa[x+1][y] == 0:
-                accs.add("Avanzar")
-        else:  # o == "L"
+                accs.append("Avanzar")
+        else:  # o == "U"
             if x > 0 and self.mapa[x-1][y] == 0:
-                accs.add("Avanzar")
+                accs.append("Avanzar")
         return accs
 
     def aplica(self, estado, accion):
-        pos = [x for x in estado.index(0)]
-        o = estado.index(1)
-        if accion == "GirarDerecha":
+        pos = [x for x in estado[0]]
+        o = estado[1]
+        if accion == "Girar a la derecha":
             if o == "U":
                 o = "R"
             elif o == "R":
@@ -181,7 +182,7 @@ class Viaje_Espacial(p.Problema):
                 o = "L"
             else:  # o == "L"
                 o = "U"
-        elif accion == "GirarIzquierda":
+        elif accion == "Girar a la izquierda":
             if o == "U":
                 o = "L"
             elif o == "L":
@@ -192,18 +193,22 @@ class Viaje_Espacial(p.Problema):
                 o = "U"
         elif accion == "Avanzar":
             if o == "U":
-                pos[1] += 1
-            elif o == "R":
-                pos[0] += 1
-            elif o == "D":
-                pos[1] -= 1
-            else:  # o == "L"
                 pos[0] -= 1
-        nuevoEstado = (pos, o)
+            elif o == "R":
+                pos[1] += 1
+            elif o == "D":
+                pos[0] += 1
+            else:  # o == "L"
+                pos[1] -= 1
+
+        nuevoEstado = (tuple(pos), o)
         return nuevoEstado
 
     def es_estado_final(self, estado):
-        return estado.index(0) == self.estado_final.index(0)
+        return estado[0] == self.estado_final
+
+    def coste_de_aplicar_accion(self, estado, accion):
+        return 2 if accion == "Avanzar" else 1
 
 
 # -------------------------------------------------------------------------
@@ -214,12 +219,14 @@ class Viaje_Espacial(p.Problema):
 # deben de llamarse, respectivamente h1_viaje_espacial y h2_viaje_espacial
 # y pueden depender del problema concreto.
 
-def h1_viaje_espacial(problema):
-    pass
+def h1_viaje_espacial(problema):#Distancia
+    return abs(problema.estado_final[0]-problema.estado_inicial[0]) + abs(problema.estado_final[1]-problema.estado_inicial[1])
 
 
 def h2_viaje_espacial(problema):
-    pass
+    roll = math.degrees(math.atan2(abs(problema.estado_final[0]-problema.estado_inicial[0][0]),abs(problema.estado_final[1]-problema.estado_inicial[0][1])))
+    grados  = {'U':270,'R':0,'D':90,'L':180}
+    return h1_viaje_espacial(problema)+(roll-grados[problema.estado_inicial[1]])
 
 
 # -------------------------------------------------------------------------
@@ -233,8 +240,42 @@ def h2_viaje_espacial(problema):
 # ejercicio puede ser útil que recuperes la clase Problema_con_Analizados
 # vista en las prácticas 3 y 4.
 
+class Problema_con_Analizados(p.Problema):
+    """Es un problema que se comporta exactamente igual que el que recibe al
+       inicializarse, y además incorpora un atributos nuevos para almacenar el
+       número de nodos analizados durante la búsqueda. De esta manera, no
+       tenemos que modificar el código del algorimo de búsqueda."""
+
+    def __init__(self, problema):
+        self.estado_inicial = problema.estado_inicial
+        self.problema = problema
+        self.analizados = 0
+
+    def acciones(self, estado):
+        return self.problema.acciones(estado)
+
+    def aplica(self, estado, accion):
+        return self.problema.aplica(estado, accion)
+
+    def es_estado_final(self, estado):
+        self.analizados += 1
+        return self.problema.es_estado_final(estado)
+
+    def coste_de_aplicar_accion(self, estado, accion):
+        return self.problema.coste_de_aplicar_accion(estado, accion)
+
+
 def recorridoYcoste(espacio, algoritmo, h=None):
-    pass
+    pro = Problema_con_Analizados(Viaje_Espacial(espacio))
+    sol = (algoritmo(pro, h).solucion() if h else algoritmo(pro).solucion())
+    print("Solución: {0}".format(sol))
+    print("Algoritmo: {0}".format(algoritmo.__name__))
+    if h:
+        print("Heurística: {0}".format(h.__name__))
+    else:
+        pass
+    print("Longitud de la solución: {0}. Nodos analizados: {1}".format(len(sol), pro.analizados))
+    return sol
 
 # Utilizando la función anterior busca soluciones a los distintos laberintos
 # de los ejemplos, usando para ello las implementaciones de los distintos
