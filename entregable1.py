@@ -224,8 +224,8 @@ def h1_viaje_espacial(problema):#Distancia
 
 
 def h2_viaje_espacial(problema):
-    roll = math.degrees(math.atan2(abs(problema.estado_final[0]-problema.estado_inicial[0][0]),abs(problema.estado_final[1]-problema.estado_inicial[0][1])))
-    grados  = {'U':270,'R':0,'D':90,'L':180}
+    roll = math.degrees(math.atan2(abs(problema.estado_final[0]-problema.estado_inicial[0][0]), abs(problema.estado_final[1]-problema.estado_inicial[0][1])))
+    grados = {'U': 270, 'R': 0, 'D': 90, 'L': 180}
     return lambda x: abs(problema.estado_final[0]-x[0][0]) + abs(problema.estado_final[1]-x[0][1])+(roll-grados[x[1]])
 
 

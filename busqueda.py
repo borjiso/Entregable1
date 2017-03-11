@@ -386,7 +386,7 @@ def busqueda_primero_el_mejor(problema, h=None):
     Sin embargo, búsqueda_con_prioridad comprueba si su valoración es menor o no (en este
     caso inútilmente). Hemos preferido dejarlo así para enfatizar la
     estructura común de estos algoritmos"""
-    return busqueda_con_prioridad(problema,lambda x: h(x.estado))
+    return busqueda_con_prioridad(problema, lambda x: h(x.estado))
 
 
 
