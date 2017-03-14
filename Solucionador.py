@@ -11,3 +11,4 @@ if __name__ == "__main__":
             for algoritmo in [busqueda_primero_el_mejor, busqueda_a_estrella]:
                 for heuristica in[h1_viaje_espacial(Viaje_Espacial(problema)), h2_viaje_espacial(Viaje_Espacial(problema))]:
                     recorridoYcoste(problema, algoritmo, heuristica)
+        no_salir = False

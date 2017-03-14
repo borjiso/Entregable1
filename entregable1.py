@@ -28,7 +28,7 @@
 # En este problema, Leela introduce en el ordenador de la nave una configuración
 # del espacio, formado por una rejilla de casillas, algunas de ellas ocupadas
 # por un asteroide. Inicialmente, en una de las casillas libres está situada
-# la nave de Planet Expre99ss que tiene tres posibles movimientos: avanzar, girar
+# la nave de Planet Express que tiene tres posibles movimientos: avanzar, girar
 # a la derecha, y girar a la izquierda (aunque al movernos por el espacio podríamos
 # avanzar en tres dimensiones, aquí simplificamos el viaje a dos). Por supuesto
 # la nave sólo puede moverse a casillas que no tengan asteroides y al girar se
