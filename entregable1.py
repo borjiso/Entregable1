@@ -275,6 +275,7 @@ def recorridoYcoste(espacio, algoritmo, h=None):
     else:
         pass
     print("Longitud de la solución: {0}. Nodos analizados: {1}".format(len(sol), pro.analizados))
+    #solucionGrafica(espacio[1], espacio[0], sol, espacio[2])
     return sol
 
 # Utilizando la función anterior busca soluciones a los distintos laberintos
@@ -338,7 +339,7 @@ def recorridoYcoste(espacio, algoritmo, h=None):
 # - Generador de mapas aleatorio.
 # - Incluir otros mapas.
 # - Añadir otras heurísticas.
-# - Visualizador gráfico de las soluciones encontradas. 
+# - Visualizador gráfico de las soluciones encontradas.
 # - Crear una pequeña interfaz de línea de comandos para interactuar
 #   con este programa.
 # - Usar Python Qt (u otra herramienta similar) para crear una interfaz
@@ -347,8 +348,73 @@ def recorridoYcoste(espacio, algoritmo, h=None):
 #
 # Todas las mejoras que introduzcas, deben ser documentadas a continuación.
 
+"""Las funciones gráficas no funcionan bien. Seguiré trabajando en ello."""
+import turtle
 
 
+def solucionGrafica(mapa, dimension, solucion, posI):
+    turtle.setup(dimension[1] * 20, dimension[0] * 20)
+    turtle.penup()
+    turtle.speed(0)
+    i= 1
+    j=0
+    for x in mapa[0]:
+        turtle.setposition(j*15, i*15)
+        turtle.dot()
+        j+=1
+    i=0
+    j=0
+    for linea in mapa:
+        for y in linea:
+            turtle.setposition(j*15, i*15)
+            if y == 1:
+                turtle.dot()
+            print i, j
+            turtle.write("{0},{1}".format(i, j))
+            j+=1
+        j=0
+        i-=1
+    for x in mapa[0]:
+        turtle.setposition(j*15, i*15)
+        turtle.dot()
+        j+=1
+    planetExpress = turtle.Turtle()
+    planetExpress.penup()
+    planetExpress.setpos((posI[0][0])*15, ((posI[0][1]))*15)
+    planetExpress.pendown()
+    print planetExpress.pos()
+    planetExpress.setheading(angulo(posI[1]))
+    planetExpress.pendown()
+    planetExpress.speed(1)
+    print posI
+    print(planetExpress.pos())
+    print "#####"
+    for accion in solucion:
+        if accion == "Girar a la derecha":
+            if planetExpress.heading() == 0:
+                planetExpress.setheading(270)
+            else:
+                planetExpress.setheading(planetExpress.heading() - 90)
+        elif accion == "Girar a la izquierda":
+            if planetExpress.heading() == 270:
+                planetExpress.setheading(0)
+            else:
+                planetExpress.setheading(planetExpress.heading() + 90)
+        elif accion == "Avanzar":
+            planetExpress.forward(1*10)
+        print(planetExpress.pos())
+    turtle.exitonclick()
+
+
+def angulo(h):
+    if h == "D":
+        return 270
+    elif h == "R":
+        return 0
+    elif h == "U":
+        return 90
+    elif h == "L":
+        return 180
 
 # ==========================================================================
 # Entregable
@@ -359,7 +425,7 @@ def recorridoYcoste(espacio, algoritmo, h=None):
 # este fichero junto a los ficheros problema.py, testEntregable1.py y
 # busqueda.py. Si has introducido alguna extensión en tu programa que haya
 # supuesto desarrollar nuevos ficheros, dichos ficheros deberán también ir
-# incluidos en el fichero zip. 
+# incluidos en el fichero zip.
 
 
 # ==========================================================================
